@@ -1,0 +1,23 @@
+# Prod deliberately differs from dev in two ways that matter more
+# than any YAML field: it tracks release tags, not `main`, and
+# `selfHeal`/`automated` sync is off — someone (or a promotion
+# pipeline step) has to click sync, or it's not going to prod.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: linkforge-prod
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/phpwk/linkforge.git
+    targetRevision: HEAD # pinned to the latest annotated release tag by the promote-prod CI job
+    path: deploy/k8s/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: linkforge
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

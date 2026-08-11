@@ -1,0 +1,9 @@
+- op: replace
+  path: /spec/tls/0/hosts
+  value: ["dev.linkforge.example", "api.dev.linkforge.example"]
+- op: replace
+  path: /spec/rules/0/host
+  value: dev.linkforge.example
+- op: replace
+  path: /spec/rules/1/host
+  value: api.dev.linkforge.example

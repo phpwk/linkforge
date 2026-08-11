@@ -1,0 +1,34 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+replicas:
+  - name: backend
+    count: 3
+  - name: frontend
+    count: 2
+
+images:
+  # The CD pipeline pins this to a digest (ghcr.io/.../linkforge-api@sha256:...)
+  # on every tagged release — never a floating tag in prod. See
+  # .github/workflows/cd.yml "promote-prod" job.
+  - name: ghcr.io/phpwk/linkforge-api
+    newTag: stable
+  - name: ghcr.io/phpwk/linkforge-web
+    newTag: stable
+
+patches:
+  - target:
+      kind: ConfigMap
+      name: frontend-config
+    path: patch-frontend-config.yaml
+  - target:
+      kind: Deployment
+      name: backend
+    path: patch-backend-affinity.yaml
+  - target:
+      kind: Deployment
+      name: frontend
+    path: patch-frontend-affinity.yaml

@@ -1,0 +1,32 @@
+# App-of-apps-lite: one Application per environment, each pointed at
+# its own kustomize overlay. Deliberately NOT using ApplicationSet
+# here — two environments doesn't earn the extra abstraction; if a
+# third or fourth environment shows up, that's the point to switch.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: linkforge-dev
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/phpwk/linkforge.git
+    targetRevision: main
+    path: deploy/k8s/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: linkforge
+  syncPolicy:
+    automated:
+      prune: true # dev tracks main directly — safe to prune removed resources automatically
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

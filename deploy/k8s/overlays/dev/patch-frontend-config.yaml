@@ -1,0 +1,3 @@
+- op: replace
+  path: /data/API_BASE_URL
+  value: https://api.dev.linkforge.example

@@ -1,0 +1,37 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+nameSuffix: ""
+
+replicas:
+  - name: backend
+    count: 1
+  - name: frontend
+    count: 1
+
+images:
+  # CD pipeline rewrites these tags to sha-<short-commit> on every
+  # push to main — see .github/workflows/cd.yml. "edge" here is just
+  # a readable placeholder for `kubectl kustomize` output before CI
+  # touches it.
+  - name: ghcr.io/phpwk/linkforge-api
+    newTag: edge
+  - name: ghcr.io/phpwk/linkforge-web
+    newTag: edge
+
+patches:
+  - target:
+      kind: Ingress
+      name: linkforge
+    path: patch-ingress-hosts.yaml
+  - target:
+      kind: ConfigMap
+      name: frontend-config
+    path: patch-frontend-config.yaml
+  - target:
+      kind: Deployment
+      name: backend
+    path: patch-backend-resources.yaml

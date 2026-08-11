@@ -1,0 +1,20 @@
+# Requires the Prometheus Operator CRDs (kube-prometheus-stack).
+# If your cluster doesn't run that, fall back to the
+# prometheus.io/scrape annotations already on the backend Pod
+# template and a plain scrape_config instead.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: backend
+  namespace: linkforge
+  labels:
+    app.kubernetes.io/name: backend
+    release: kube-prometheus-stack # must match your Prometheus's serviceMonitorSelector
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: backend
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s

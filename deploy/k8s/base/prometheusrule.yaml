@@ -1,0 +1,53 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: linkforge-backend
+  namespace: linkforge
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: linkforge.backend
+      rules:
+        - alert: LinkForgeHighErrorRate
+          expr: |
+            sum(rate(linkforge_http_requests_total{status_code=~"5.."}[5m]))
+            /
+            sum(rate(linkforge_http_requests_total[5m]))
+            > 0.05
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "LinkForge API 5xx rate above 5%"
+            description: "{{ $value | humanizePercentage }} of requests are failing over the last 5m."
+
+        - alert: LinkForgeHighLatency
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(linkforge_http_request_duration_seconds_bucket[5m])) by (le)
+            ) > 1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "LinkForge API p99 latency above 1s"
+            description: "p99 request latency has been over 1s for 10m — check DB connection pool saturation first."
+
+        - alert: LinkForgeBackendDown
+          expr: up{job=~".*backend.*"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "LinkForge backend target is down"
+            description: "Prometheus has lost all backend scrape targets for 2m."
+
+        - alert: LinkForgePodCrashLooping
+          expr: increase(kube_pod_container_status_restarts_total{namespace="linkforge"}[15m]) > 3
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "A linkforge pod is crash looping"
+            description: "{{ $labels.pod }} has restarted more than 3 times in 15m."

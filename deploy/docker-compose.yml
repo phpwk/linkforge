@@ -1,0 +1,56 @@
+name: linkforge
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: linkforge
+      POSTGRES_PASSWORD: linkforge
+      POSTGRES_DB: linkforge
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ../db/migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U linkforge -d linkforge"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: ../backend
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGUSER: linkforge
+      PGPASSWORD: linkforge
+      PGDATABASE: linkforge
+      PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/healthz',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  web:
+    build:
+      context: ../frontend
+    environment:
+      # Same-origin: nginx serves the SPA on :8081 and this compose
+      # setup relies on the browser hitting the api container directly.
+      # In a real deployment this is the Ingress host for the api.
+      API_BASE_URL: "http://localhost:8080"
+    ports:
+      - "8081:8080"
+    depends_on:
+      - api
+
+volumes:
+  db-data:

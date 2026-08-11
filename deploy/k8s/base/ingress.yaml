@@ -1,0 +1,41 @@
+# Host-based split rather than path-based: the backend's redirect
+# route is GET /:code at the root, which would collide with the
+# frontend's own routes if both lived on one host. Two hosts keeps
+# "linkforge.example/<code>" working as a short link with no
+# path-rewrite rules.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: linkforge
+  namespace: linkforge
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - linkforge.example
+        - api.linkforge.example
+      secretName: linkforge-tls
+  rules:
+    - host: linkforge.example
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+    - host: api.linkforge.example
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 80

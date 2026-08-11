@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LinkForge</title>
+    <!--
+      Injected by the container entrypoint (see frontend/docker-entrypoint.sh)
+      at *run* time, not build time. This is what lets one image be
+      promoted dev -> staging -> prod without a rebuild — the API
+      origin is an environment concern, not a build artifact.
+      Locally (npm run dev) this file simply doesn't exist and the
+      app falls back to a relative /api path via the Vite proxy.
+    -->
+    <script src="/config.js" onerror="void 0"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
